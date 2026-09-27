@@ -1,6 +1,6 @@
 # Projet Messagerie instantanée
 
-Projet de synthèse API et Web Services — EFREI Paris
+Projet de synthèse API et Web Services - EFREI Paris
 
 ## Description
 
