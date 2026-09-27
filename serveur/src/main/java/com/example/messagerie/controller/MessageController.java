@@ -2,6 +2,7 @@ package com.example.messagerie.controller;
 
 import com.example.messagerie.dto.MessageResponse;
 import com.example.messagerie.service.MessageService;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,13 +18,13 @@ public class MessageController {
     }
 
     /**
-     * GET /api/messages/{utilisateurId} : historique avec cet utilisateur.
-     * PROVISOIRE (etape 2) : "moi" est passe en parametre ?moi=1.
-     * A l'etape 3, il sera lu dans le JWT et ce parametre disparaitra.
+     * GET /api/messages/{utilisateurId} : historique entre l'utilisateur connecte et cet utilisateur.
+     * L'utilisateur connecte ("moi") est lu dans le jeton JWT par JwtAuthFilter :
+     * il ne peut donc pas lire les conversations des autres.
      */
     @GetMapping("/{utilisateurId}")
     public List<MessageResponse> historique(@PathVariable Long utilisateurId,
-                                            @RequestParam Long moi) {
+                                            @AuthenticationPrincipal Long moi) {
         return messageService.historique(moi, utilisateurId);
     }
 }
