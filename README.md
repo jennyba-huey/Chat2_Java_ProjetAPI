@@ -217,7 +217,7 @@ Avant de lancer le projet, installer :
 ### 1. Cloner le projet
 
 ```bash
-git clone <URL_DU_REPOSITORY>
+git clone <https://github.com/jennyba-huey/Chat2_Java_ProjetAPI>
 ```
 
 Puis entrer dans le projet :
