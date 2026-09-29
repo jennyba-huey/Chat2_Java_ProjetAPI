@@ -364,7 +364,7 @@ git push
 
 Les modifications fonctionnelles sont ensuite fusionnées dans `main`.
 
-## Autrices 👩🏾‍💻 🧑🏾‍💻
+## Autrices 👩🏾‍💻 👩🏾‍💻
 
 Projet réalisé dans le cadre du Master Ingénierie Informatique à l'EFREI Paris.
 
