@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#e73c7e">
+  <link rel="icon" type="image/svg+xml" href="mascotte.svg">
+  <title>Messagerie - Mobile</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Ecran 1 : connexion / creation de compte -->
+  <main id="ecran-connexion" class="ecran ecran-connexion">
+    <form id="form-connexion" class="carte-connexion" novalidate>
+      <img src="mascotte.svg" alt="" class="mascotte">
+      <h1 id="titre-connexion">Connexion</h1>
+
+      <input id="champ-username" type="text" placeholder="Nom d'utilisateur"
+             autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false"
+             maxlength="50" aria-label="Nom d'utilisateur">
+      <input id="champ-mdp" type="password" placeholder="Mot de passe (6 caractères minimum)"
+             autocomplete="current-password" aria-label="Mot de passe">
+
+      <p id="erreur-connexion" class="erreur" role="alert" hidden></p>
+
+      <button type="submit" id="btn-valider" class="btn-principal">Se connecter</button>
+      <button type="button" id="btn-changer-mode" class="lien">Pas de compte ? Créer un compte</button>
+    </form>
+  </main>
+
+  <!-- Ecran 2 : liste des utilisateurs -->
+  <main id="ecran-liste" class="ecran" hidden>
+    <header class="barre">
+      <span class="session">
+        <span id="pastille-canal" class="pastille" title="Canal temps réel fermé"></span>
+        <strong id="mon-nom"></strong>
+      </span>
+      <button type="button" id="btn-deconnexion" class="lien">Déconnexion</button>
+    </header>
+
+    <p id="bandeau-canal" class="bandeau" role="status" hidden>Connexion au temps réel en cours…</p>
+    <p id="erreur-liste" class="erreur marge" role="alert" hidden></p>
+
+    <ul id="liste-utilisateurs" class="liste-utilisateurs"></ul>
+    <p id="liste-vide" class="vide" hidden>
+      Aucun autre utilisateur pour le moment. Crée un second compte pour tester une conversation.
+    </p>
+
+    <button type="button" id="btn-rafraichir" class="lien centre">Rafraîchir la liste</button>
+  </main>
+
+  <!-- Ecran 3 : conversation -->
+  <main id="ecran-conversation" class="ecran ecran-conversation" hidden>
+    <header class="barre">
+      <button type="button" id="btn-retour" class="btn-retour" aria-label="Retour à la liste">‹</button>
+      <span id="conv-avatar" class="avatar" aria-hidden="true"></span>
+      <div class="barre-texte">
+        <strong id="conv-nom" class="conv-nom"></strong>
+        <span id="conv-statut" class="conv-statut"></span>
+      </div>
+    </header>
+
+    <div id="liste-messages" class="liste-messages" aria-live="polite"></div>
+
+    <p id="erreur-conversation" class="erreur marge" role="alert" hidden></p>
+
+    <form id="form-message" class="saisie">
+      <input id="champ-message" type="text" maxlength="2000" autocomplete="off"
+             placeholder="Écris un message..." aria-label="Message">
+      <button type="submit" id="btn-envoyer" class="btn-envoyer">Envoyer</button>
+    </form>
+  </main>
+
+  <div id="toast" class="toast" role="status" hidden></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,481 @@
+/* =========================================================
+   Client mobile - messagerie
+   Meme identite visuelle que le client bureau (degrade anime,
+   panneaux en verre, violet), adaptee a un ecran de telephone :
+   un seul ecran a la fois, gros boutons, saisie fixee en bas.
+   ========================================================= */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* L'attribut hidden doit toujours cacher, meme si une classe impose display */
+[hidden] {
+  display: none !important;
+}
+
+:root {
+  /* Couleurs reprises du client bureau */
+  --page-bg: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+  --surface: rgba(255, 255, 255, 0.25);
+  --surface-strong: rgba(255, 255, 255, 0.45);
+  --text-main: #1f2937;
+  --text-muted: #4b5563;
+  --primary: #8a2be2;
+  --bubble-me: linear-gradient(135deg, #8a2be2 0%, #4a00e0 100%);
+  --bubble-other: rgba(255, 255, 255, 0.7);
+  --input-bg: rgba(255, 255, 255, 0.9);
+  --shadow-soft: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+  --vert: #22c55e;
+  --gris: #9ca3af;
+  --flou: blur(14px);
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 16px;
+  line-height: 1.45;
+  color: var(--text-main);
+  background: var(--page-bg);
+  background-size: 400% 400%;
+  animation: degrade 18s ease infinite;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@keyframes degrade {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body {
+    animation: none;
+  }
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* ---------- Ecrans ---------- */
+
+.ecran {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+/* ---------- Elements communs ---------- */
+
+.erreur {
+  padding: 8px 12px;
+  font-size: 0.9rem;
+  text-align: left;
+  color: #b91c1c;
+  background: rgba(254, 226, 226, 0.9);
+  border-radius: 10px;
+}
+
+.marge {
+  margin: 8px 12px;
+}
+
+.lien {
+  min-height: 44px;
+  padding: 0 0.25rem;
+  font-size: 0.95rem;
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+.centre {
+  display: block;
+  margin: 4px auto 20px;
+}
+
+.pastille {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--gris);
+}
+
+.pastille.en-ligne {
+  background: var(--vert);
+  box-shadow: 0 0 6px var(--vert);
+}
+
+/* ---------- Ecran de connexion ---------- */
+
+.ecran-connexion {
+  justify-content: center;
+  padding: calc(16px + env(safe-area-inset-top, 0px)) 16px calc(16px + env(safe-area-inset-bottom, 0px));
+}
+
+.carte-connexion {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 28px 22px;
+  text-align: center;
+  background: var(--surface-strong);
+  -webkit-backdrop-filter: var(--flou);
+  backdrop-filter: var(--flou);
+  border-radius: 24px;
+  box-shadow: var(--shadow-soft);
+}
+
+.mascotte {
+  width: 90px;
+  margin: 0 auto;
+}
+
+.carte-connexion h1 {
+  font-size: 1.6rem;
+  font-weight: 800;
+}
+
+/* 16px minimum : evite le zoom automatique de l'iPhone sur les champs */
+.carte-connexion input {
+  min-height: 52px;
+  padding: 12px 16px;
+  font-size: 1rem;
+  background: var(--input-bg);
+  border: none;
+  border-radius: 14px;
+  outline: none;
+}
+
+.carte-connexion input:focus,
+.saisie input:focus {
+  box-shadow: 0 0 0 3px rgba(138, 43, 226, 0.35);
+}
+
+.btn-principal {
+  min-height: 52px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--bubble-me);
+  border-radius: 14px;
+}
+
+.btn-principal:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+/* ---------- Barre du haut (liste et conversation) ---------- */
+
+.barre {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 60px;
+  padding: calc(10px + env(safe-area-inset-top, 0px)) 14px 10px;
+  background: var(--surface-strong);
+  -webkit-backdrop-filter: var(--flou);
+  backdrop-filter: var(--flou);
+  box-shadow: var(--shadow-soft);
+}
+
+.session {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.session strong {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bandeau {
+  margin: 10px 12px 0;
+  padding: 8px 12px;
+  font-size: 0.88rem;
+  text-align: center;
+  background: var(--surface);
+  -webkit-backdrop-filter: var(--flou);
+  backdrop-filter: var(--flou);
+  border-radius: 12px;
+}
+
+/* ---------- Avatars ---------- */
+
+.avatar {
+  position: relative;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--bubble-me);
+  border-radius: 50%;
+}
+
+.avatar .pastille {
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 13px;
+  height: 13px;
+  border: 2px solid #fff;
+}
+
+/* ---------- Liste des utilisateurs ---------- */
+
+.liste-utilisateurs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  list-style: none;
+}
+
+.user-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 64px;
+  padding: 10px 14px;
+  text-align: left;
+  background: var(--surface-strong);
+  -webkit-backdrop-filter: var(--flou);
+  backdrop-filter: var(--flou);
+  border-radius: 16px;
+  box-shadow: var(--shadow-soft);
+}
+
+.user-item:active {
+  background: rgba(255, 255, 255, 0.65);
+}
+
+.user-texte {
+  flex: 1;
+  min-width: 0;
+}
+
+.user-nom {
+  display: block;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-statut {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.badge {
+  flex: none;
+  min-width: 24px;
+  padding: 2px 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-align: center;
+  color: #fff;
+  background: var(--bubble-me);
+  border-radius: 999px;
+}
+
+.vide {
+  margin: 12px;
+  padding: 16px;
+  text-align: center;
+  background: var(--surface);
+  border-radius: 16px;
+}
+
+/* ---------- Conversation ---------- */
+
+.ecran-conversation {
+  height: 100vh;
+  height: 100dvh;
+}
+
+.btn-retour {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  margin-left: -6px;
+  font-size: 2rem;
+  line-height: 1;
+  color: var(--primary);
+  border-radius: 50%;
+}
+
+.barre-texte {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.conv-nom {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.conv-statut {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.conv-statut.en-ligne {
+  color: #15803d;
+}
+
+/* "est en train d'ecrire..." remplace le statut, comme dans les messageries mobiles */
+.conv-statut.ecrit {
+  font-style: italic;
+  color: var(--primary);
+}
+
+.liste-messages {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 12px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.aucun-message {
+  margin: auto;
+  padding: 12px 16px;
+  text-align: center;
+  background: var(--surface);
+  border-radius: 14px;
+}
+
+.message {
+  max-width: 80%;
+  padding: 10px 14px;
+  border-radius: 18px;
+  overflow-wrap: anywhere;
+}
+
+.message p {
+  white-space: pre-wrap;
+}
+
+.message.mien {
+  align-self: flex-end;
+  color: #fff;
+  background: var(--bubble-me);
+  border-bottom-right-radius: 4px;
+}
+
+.message.autre {
+  align-self: flex-start;
+  background: var(--bubble-other);
+  border-bottom-left-radius: 4px;
+}
+
+.message-heure {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.7rem;
+  text-align: right;
+  opacity: 0.75;
+}
+
+/* Zone de saisie fixee en bas de l'ecran */
+.saisie {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px));
+  background: var(--surface-strong);
+  -webkit-backdrop-filter: var(--flou);
+  backdrop-filter: var(--flou);
+}
+
+.saisie input {
+  flex: 1;
+  min-width: 0;
+  min-height: 48px;
+  padding: 0 16px;
+  font-size: 1rem;
+  background: var(--input-bg);
+  border: none;
+  border-radius: 999px;
+  outline: none;
+}
+
+.saisie input:disabled {
+  opacity: 0.6;
+}
+
+.btn-envoyer {
+  min-height: 48px;
+  padding: 0 18px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--bubble-me);
+  border-radius: 999px;
+}
+
+.btn-envoyer:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ---------- Notification temporaire ---------- */
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+  z-index: 20;
+  width: calc(100% - 32px);
+  max-width: 480px;
+  padding: 12px 16px;
+  font-size: 0.95rem;
+  color: #fff;
+  background: rgba(31, 41, 55, 0.9);
+  border-radius: 14px;
+  box-shadow: var(--shadow-soft);
+  transform: translateX(-50%);
+}
