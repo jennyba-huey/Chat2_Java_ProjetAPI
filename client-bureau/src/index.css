@@ -302,3 +302,10 @@ button {
     opacity: 0.5;
     cursor: not-allowed;
 }
+
+.chat-ecrit {
+    margin-left: auto;
+    font-size: 0.85rem;
+    font-style: italic;
+    color: var(--primary);
+}

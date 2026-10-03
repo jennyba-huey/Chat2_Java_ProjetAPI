@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import LoginForm from './LoginForm'
 import Conversation from './Conversation'
 import useChatSocket from './useChatSocket'
@@ -23,6 +23,8 @@ export default function App() {
     const [contactId, setContactId] = useState(null)
     const [messages, setMessages] = useState([])
     const [erreurConversation, setErreurConversation] = useState('')
+    const [ecritureDe, setEcritureDe] = useState(null)
+    const minuteurEcriture = useRef(null)
 
     function deconnecter() {
         effacerSession()
@@ -92,6 +94,15 @@ export default function App() {
             if (autreId === contactId) {
                 setMessages((courants) => fusionner(courants, [evenement]))
             }
+            // Le message est arrive : l'autre a fini d'ecrire
+            if (evenement.expediteurId !== session.id) {
+                setEcritureDe(null)
+            }
+        } else if (evenement.type === 'typing') {
+            // "est en train d'ecrire" : s'efface tout seul apres 3 secondes sans nouvelle saisie
+            setEcritureDe(evenement.expediteurId)
+            clearTimeout(minuteurEcriture.current)
+            minuteurEcriture.current = setTimeout(() => setEcritureDe(null), 3000)
         } else if (evenement.type === 'erreur') {
             setErreurConversation(evenement.message)
         }
@@ -107,6 +118,11 @@ export default function App() {
             setErreurConversation("Canal fermé : le message n'a pas été envoyé.")
         }
         return envoye
+    }
+
+    // Previent le destinataire qu'on est en train d'ecrire
+    function signalerSaisie() {
+        envoyer({ type: 'typing', destinataireId: contactId })
     }
 
     if (!session) {
@@ -153,7 +169,9 @@ export default function App() {
                         messages={messages}
                         erreur={erreurConversation}
                         canalOuvert={canalOuvert}
+                        ecrit={ecritureDe === contactId}
                         onEnvoyer={envoyerMessage}
+                        onSaisie={signalerSaisie}
                     />
                 </main>
             ) : (
