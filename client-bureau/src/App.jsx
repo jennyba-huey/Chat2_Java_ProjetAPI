@@ -81,6 +81,12 @@ export default function App() {
         if (evenement.type === 'ouverture') {
             // Le canal vient de s'ouvrir : on recharge la liste pour avoir les statuts a jour
             charger()
+            // et l'historique, pour recuperer les messages recus pendant une coupure
+            if (contactId != null) {
+                recupererHistorique(session.token, contactId)
+                    .then((liste) => setMessages((courants) => fusionner(liste, courants)))
+                    .catch(() => {})
+            }
         } else if (evenement.type === 'presence') {
             setUtilisateurs((liste) =>
                 liste.map((u) =>
@@ -94,9 +100,10 @@ export default function App() {
             if (autreId === contactId) {
                 setMessages((courants) => fusionner(courants, [evenement]))
             }
-            // Le message est arrive : l'autre a fini d'ecrire
+            // Le message est arrive : l'autre a fini d'ecrire, et on previent par un son
             if (evenement.expediteurId !== session.id) {
                 setEcritureDe(null)
+                new Audio('/notification.mp3').play().catch(() => {})
             }
         } else if (evenement.type === 'typing') {
             // "est en train d'ecrire" : s'efface tout seul apres 3 secondes sans nouvelle saisie
