@@ -2,14 +2,33 @@
   "info": {
     "_postman_id": "0ec6a87f-edc9-48ef-9c8b-77f0d214e7da",
     "name": "ProjetAPI",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "_exporter_id": "58398156",
-    "_collection_link": "https://go.postman.co/collection/58398156-0ec6a87f-edc9-48ef-9c8b-77f0d214e7da?source=collection_link"
+    "description": "Tests de l'API REST de la messagerie (securite JWT). Lancer d'abord un login (Post_Authentification1 pour Jenny ou Post_Authentification2_Ashley) : son script enregistre le jeton dans la variable {{token}}, utilisee par toutes les requetes protegees (authentification Bearer definie au niveau de la collection).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
+  ],
   "item": [
     {
       "name": "Post_CompteUtilisateur",
       "request": {
+        "auth": {
+          "type": "noauth"
+        },
         "method": "POST",
         "header": [],
         "body": {
@@ -32,13 +51,17 @@
             "api",
             "comptes"
           ]
-        }
+        },
+        "description": "Creation de compte : endpoint public, fonctionne sans jeton. 201 a la premiere creation, 409 si le nom existe deja."
       },
       "response": []
     },
     {
       "name": "Post_AjoutCompteUtilisateur2",
       "request": {
+        "auth": {
+          "type": "noauth"
+        },
         "method": "POST",
         "header": [],
         "body": {
@@ -61,13 +84,17 @@
             "api",
             "comptes"
           ]
-        }
+        },
+        "description": "Creation d'un second compte, sans jeton. 201 ou 409."
       },
       "response": []
     },
     {
       "name": "Post_Invalide",
       "request": {
+        "auth": {
+          "type": "noauth"
+        },
         "method": "POST",
         "header": [],
         "body": {
@@ -90,13 +117,32 @@
             "api",
             "comptes"
           ]
-        }
+        },
+        "description": "Nom d'utilisateur vide : 400."
       },
       "response": []
     },
     {
       "name": "Post_Authentification1",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// Enregistre le jeton recu dans la variable de collection {{token}}",
+              "const reponse = pm.response.json();",
+              "if (reponse.token) {",
+              "    pm.collectionVariables.set(\"token\", reponse.token);",
+              "}"
+            ]
+          }
+        }
+      ],
       "request": {
+        "auth": {
+          "type": "noauth"
+        },
         "method": "POST",
         "header": [],
         "body": {
@@ -120,13 +166,32 @@
             "auth",
             "login"
           ]
-        }
+        },
+        "description": "Login de Jenny : 200 avec {token, id, username}. Le script enregistre le jeton dans {{token}}."
       },
       "response": []
     },
     {
-      "name": "Post_Authentification1 Copy",
+      "name": "Post_Authentification2_Ashley",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// Enregistre le jeton recu dans la variable de collection {{token}}",
+              "const reponse = pm.response.json();",
+              "if (reponse.token) {",
+              "    pm.collectionVariables.set(\"token\", reponse.token);",
+              "}"
+            ]
+          }
+        }
+      ],
       "request": {
+        "auth": {
+          "type": "noauth"
+        },
         "method": "POST",
         "header": [],
         "body": {
@@ -150,13 +215,17 @@
             "auth",
             "login"
           ]
-        }
+        },
+        "description": "Login d'Ashley (second utilisateur, pour les tests WebSocket a deux). Le script enregistre le jeton dans {{token}}."
       },
       "response": []
     },
     {
       "name": "Post_Authentification1_MauvaisMotdePasse",
       "request": {
+        "auth": {
+          "type": "noauth"
+        },
         "method": "POST",
         "header": [],
         "body": {
@@ -180,13 +249,17 @@
             "auth",
             "login"
           ]
-        }
+        },
+        "description": "Mauvais mot de passe : 401."
       },
       "response": []
     },
     {
       "name": "Post_Authentification_FauxIdentifiant",
       "request": {
+        "auth": {
+          "type": "noauth"
+        },
         "method": "POST",
         "header": [],
         "body": {
@@ -210,19 +283,65 @@
             "auth",
             "login"
           ]
-        }
+        },
+        "description": "Identifiant inconnu : 401."
       },
       "response": []
     },
     {
       "name": "Get_Utilisateur",
       "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/utilisateurs",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "utilisateurs"
+          ]
+        },
+        "description": "Liste des utilisateurs avec leur statut. Jeton requis (herite de la collection) : 200 avec jeton, 401 sans."
+      },
+      "response": []
+    },
+    {
+      "name": "Get_Utilisateur_SansJeton",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/utilisateurs",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "utilisateurs"
+          ]
+        },
+        "description": "Meme requete sans aucun jeton : 401 {status, erreur, message, date}."
+      },
+      "response": []
+    },
+    {
+      "name": "Get_Utilisateur_JetonModifie",
+      "request": {
         "auth": {
           "type": "bearer",
           "bearer": [
             {
               "key": "token",
-              "value": "{{json_web_token_0wfm}}",
+              "value": "eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIzIiwidXNlcm5hbWUiOiJKZW5ueSJ9.signature-modifiee-donc-invalide",
               "type": "string"
             }
           ]
@@ -240,23 +359,14 @@
             "api",
             "utilisateurs"
           ]
-        }
+        },
+        "description": "Jeton dont la signature a ete modifiee : le serveur le detecte et renvoie 401."
       },
       "response": []
     },
     {
       "name": "Get_Message",
       "request": {
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{json_web_token_0epc}}",
-              "type": "string"
-            }
-          ]
-        },
         "method": "GET",
         "header": [],
         "url": {
@@ -271,7 +381,8 @@
             "messages",
             "1"
           ]
-        }
+        },
+        "description": "Historique entre l'utilisateur connecte (lu dans le jeton) et l'utilisateur 1. Le parametre ?moi= n'existe plus. Changer l'id selon les comptes de votre base."
       },
       "response": []
     },
@@ -281,7 +392,7 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "http://localhost:8080/api/messages/99?moi=1",
+          "raw": "http://localhost:8080/api/messages/99",
           "protocol": "http",
           "host": [
             "localhost"
@@ -291,26 +402,11 @@
             "api",
             "messages",
             "99"
-          ],
-          "query": [
-            {
-              "key": "moi",
-              "value": "1"
-            }
           ]
-        }
+        },
+        "description": "Historique avec un utilisateur inexistant : 404."
       },
       "response": []
-    }
-  ],
-  "variable": [
-    {
-      "key": "json_web_token_0wfm",
-      "secret": true
-    },
-    {
-      "key": "json_web_token_0epc",
-      "secret": true
     }
   ]
 }
