@@ -29,6 +29,7 @@ import java.util.List;
 /**
  * Configuration de securite (etape 3) :
  * - seuls POST /api/comptes et POST /api/auth/login sont publics ;
+ * - la documentation Swagger (/swagger-ui.html, /v3/api-docs) est publique (etape 6) ;
  * - tout le reste exige un jeton JWT valide, sinon 401 au format JSON du contrat ;
  * - /ws/** est laisse passer ici : le jeton y est verifie par JwtHandshakeInterceptor ;
  * - CORS autorise les pages des deux clients (en local et sur le reseau Wi-Fi de la demo).
@@ -63,6 +64,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/comptes", "/api/auth/login").permitAll()
                         .requestMatchers("/ws/**").permitAll()
                         .requestMatchers("/error").permitAll()
+                        // Documentation Swagger (etape 6) : page et description de l'API accessibles sans jeton
+                        .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(e -> e.authenticationEntryPoint(this::refuserSansJeton))
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
