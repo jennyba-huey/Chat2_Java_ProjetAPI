@@ -3,6 +3,8 @@ package com.example.messagerie.websocket;
 import com.example.messagerie.dto.MessageResponse;
 import com.example.messagerie.security.JwtHandshakeInterceptor;
 import com.example.messagerie.service.MessageService;
+import com.example.messagerie.service.NotificationService;
+import com.example.messagerie.service.RateLimitService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -23,6 +25,8 @@ import java.util.Map;
  * Le jeton est deja verifie par JwtHandshakeInterceptor, on connait donc toujours l'utilisateur.
  * Types geres : "message" (enregistre puis transmis) et "typing" (transmis sans enregistrement).
  * Le serveur envoie aussi "presence" et "erreur".
+ * Les messages sont limites par RateLimitService (anti-spam), et un destinataire hors ligne
+ * est prevenu par NotificationService (webhook simule).
  */
 @Component
 public class ChatWebSocketHandler extends TextWebSocketHandler {
@@ -32,13 +36,19 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
     private final SessionRegistry sessionRegistry;
     private final MessageService messageService;
     private final ObjectMapper objectMapper;
+    private final RateLimitService rateLimitService;
+    private final NotificationService notificationService;
 
     public ChatWebSocketHandler(SessionRegistry sessionRegistry,
                                 MessageService messageService,
-                                ObjectMapper objectMapper) {
+                                ObjectMapper objectMapper,
+                                RateLimitService rateLimitService,
+                                NotificationService notificationService) {
         this.sessionRegistry = sessionRegistry;
         this.messageService = messageService;
         this.objectMapper = objectMapper;
+        this.rateLimitService = rateLimitService;
+        this.notificationService = notificationService;
     }
 
     @Override
@@ -77,6 +87,12 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         Long destinataireId = json.hasNonNull("destinataireId") ? json.get("destinataireId").asLong() : null;
         String contenu = json.path("contenu").asText(null);
 
+        // Anti-spam : au-dela de la limite, le message est refuse et n'est pas enregistre
+        if (!rateLimitService.autoriser(expediteurId)) {
+            log.warn("[WS] Limite de debit atteinte pour l'utilisateur {}", expediteurId);
+            throw new IllegalArgumentException("Trop de messages envoyes, patientez quelques secondes");
+        }
+
         // L'expediteur vient du jeton, jamais du JSON envoye par le client
         MessageResponse enregistre = messageService.enregistrer(expediteurId, destinataireId, contenu);
 
@@ -93,6 +109,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         } else {
             // Rien n'est perdu : le message est en base et sera lu via l'historique REST
             log.info("[WS] Utilisateur {} hors ligne : message {} conserve en base", destinataireId, enregistre.id());
+            notificationService.notifierHorsLigne(destinataireId, expediteurId, enregistre.id());
         }
 
         // L'expediteur recoit aussi le message, avec l'id et la date du serveur
