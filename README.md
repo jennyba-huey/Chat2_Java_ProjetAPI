@@ -1,375 +1,204 @@
-# Projet Messagerie instantanée
+# Messagerie instantanée entre deux appareils
 
-Projet de synthèse API et Web Services - EFREI Paris
+Projet de synthèse **API et Web Services** — Master Ingénierie Informatique, EFREI Paris
+Binôme : **Djeneba Ba** et **Ashley Kilola Makuiza** — Enseignant : Ralph Bou Nader
 
-## Description
+## En deux mots
 
-Ce projet consiste à développer une application de messagerie instantanée permettant à deux utilisateurs de communiquer en temps réel depuis deux appareils différents.
+C'est une petite application de chat, comme une messagerie sur téléphone, mais faite par nous de A à Z.
+Deux personnes, sur deux appareils différents (par exemple un téléphone et un ordinateur), peuvent :
 
-L'application repose sur :
+- créer un compte et se connecter ;
+- voir qui est en ligne ;
+- s'envoyer des messages qui arrivent **instantanément**, sans recharger la page ;
+- retrouver tout l'historique de leur conversation, même après s'être déconnectées.
 
-* une API REST développée avec Spring Boot ;
-* une communication temps réel avec WebSocket ;
-* une authentification sécurisée avec JWT ;
-* une base de données MySQL ;
-* un client bureau développé avec React/Vite ;
-* un client mobile développé en HTML, CSS et JavaScript.
+Tous les messages passent par un **serveur central** et sont enregistrés dans une **base de données**.
+Les deux appareils ne se parlent jamais directement : c'est le serveur qui fait le facteur.
 
-Les messages sont enregistrés en base de données afin de conserver l'historique des conversations.
+## Comment ça marche (version simple)
 
-## Technologies utilisées
-
-### Serveur
-
-* Java 17
-* Spring Boot 3.5.11
-* Maven
-* Spring Web
-* Spring Data JPA
-* MySQL
-* BCrypt
-* JWT
-* WebSocket
-
-### Client bureau
-
-* React
-* Vite
-* JavaScript
-
-### Client mobile
-
-* HTML
-* CSS
-* JavaScript
-
-### Tests
-
-* Postman
-
-## Structure du projet
-
-```text
-projet-messagerie/
-│
-├── serveur/
-│   └── APIProject/
-│       └── Projet Spring Boot
-│
-├── client-mobile/
-│   ├── index.html
-│   ├── style.css
-│   └── app.js
-│
-├── client-bureau/
-│   └── Application React/Vite
-│
-├── postman/
-│   └── Collection ProjetAPI
-│
-├── rapport/
-│   └── Documents et captures du projet
-│
-└── README.md
+```
+   Téléphone                    Serveur Spring Boot                  Ordinateur
+ (client mobile)                   (port 8080)                    (client bureau)
+       │                               │                                │
+       │── REST : connexion, liste ───►│◄─── REST : connexion, liste ───│
+       │   des utilisateurs, historique│     des utilisateurs, historique│
+       │                               │                                │
+       │◄═══ WebSocket : messages ════►│◄════ WebSocket : messages ════►│
+       │     en direct                 │      en direct                 │
+                                       │
+                                  Base MySQL
+                          (comptes + tous les messages)
 ```
 
-## API REST
+On utilise deux façons de communiquer, chacune pour ce qu'elle fait de mieux :
 
-L'API est accessible localement à l'adresse :
+- **REST (HTTP)** : on pose une question, le serveur répond, et c'est fini. Parfait pour se connecter
+  ou récupérer l'historique, qui sont des actions ponctuelles.
+- **WebSocket** : la connexion reste ouverte, comme un appel téléphonique. Le serveur peut donc
+  envoyer un nouveau message au destinataire dès qu'il arrive, sans que celui-ci ait rien demandé.
 
-```text
-http://localhost:8080
+## Technologies
+
+| Partie | Technologies |
+|---|---|
+| Serveur | Java 17, Spring Boot 3.5, Spring Security, Spring Data JPA, WebSocket |
+| Base de données | MySQL |
+| Sécurité | Mots de passe hachés avec BCrypt, authentification par jeton JWT |
+| Client bureau | React + Vite (JavaScript) |
+| Client mobile | HTML, CSS et JavaScript, sans framework |
+| Documentation et tests | Swagger, Postman, JUnit |
+
+## Organisation du dépôt
+
+```
+Chat2_Java_ProjetAPI/
+├── serveur/          le serveur Spring Boot (l'API)
+├── client-bureau/    le client pour ordinateur (React)
+├── client-mobile/    le client pour téléphone (HTML/CSS/JS)
+├── postman/          la collection Postman pour tester l'API
+├── rapport/          les captures et brouillons du rapport
+└── README.md         ce fichier
 ```
 
-### Création d'un compte
+## Ce qu'il faut installer
 
-```http
-POST /api/comptes
-```
+- **Java 17** (attention : pas une version plus récente, le projet est prévu pour la 17)
+- **MySQL** (version 8 ou plus)
+- **Node.js** (pour le client bureau)
+- **Python 3** (déjà présent sur Mac, pour servir le client mobile) ou l'extension **Live Server** de VS Code
+- Conseillé : **IntelliJ IDEA** pour le serveur, **VS Code** pour les clients, **Postman** pour les tests
 
-Corps de la requête :
+> 💡 Sur Mac, ne mettez pas le projet dans **Documents** ou **Bureau** si ces dossiers sont
+> synchronisés avec iCloud : iCloud bloque Git, IntelliJ et Vite au mauvais moment.
+> Un dossier comme `~/projets` évite ce problème.
 
-```json
-{
-  "username": "alice",
-  "motDePasse": "motdepasse"
-}
-```
+## Lancer le projet
 
-### Connexion
+Il faut lancer **trois choses** : le serveur, puis les deux clients.
 
-```http
-POST /api/auth/login
-```
+### 1. Le serveur
 
-Corps :
+1. Démarrez MySQL (sur Mac avec Homebrew : `brew services start mysql`).
+2. Ouvrez le dossier `serveur` dans IntelliJ : **File → Open**, choisissez `serveur/pom.xml`, puis **Open as Project**.
+3. Vérifiez que le projet utilise bien **Java 17** : **File → Project Structure → Project → SDK**.
+4. Donnez votre mot de passe MySQL au serveur. Il n'est **pas écrit dans le code** (pour qu'il ne finisse pas sur GitHub) :
+   **Run → Edit Configurations → ApiProjectApplication → Modify options → Environment variables**,
+   puis écrivez `DB_PASSWORD=votre_mot_de_passe_mysql`.
+5. Lancez `ApiProjectApplication` avec le triangle vert.
 
-```json
-{
-  "username": "alice",
-  "motDePasse": "motdepasse"
-}
-```
+C'est bon quand la console affiche `Started ApiProjectApplication`.
+La base `messagerie` et ses tables se créent toutes seules au premier lancement.
 
-La connexion retourne un JWT.
+### 2. Le client bureau (ordinateur)
 
-### Liste des utilisateurs
-
-```http
-GET /api/utilisateurs
-```
-
-Cette requête nécessite un jeton JWT.
-
-### Historique d'une conversation
-
-```http
-GET /api/messages/{id}
-```
-
-Cette requête permet de récupérer l'historique des messages avec un utilisateur.
-
-Les requêtes protégées utilisent l'en-tête :
-
-```text
-Authorization: Bearer <jeton>
-```
-
-## WebSocket
-
-La communication en temps réel utilise WebSocket.
-
-En local :
-
-```text
-ws://localhost:8080/ws/messages?token=<jeton>
-```
-
-Les messages sont échangés au format JSON.
-
-Exemple :
-
-```json
-{
-  "type": "message",
-  "expediteurId": 1,
-  "destinataireId": 2,
-  "contenu": "Bonjour !",
-  "dateEnvoi": "2026-09-21T10:15:30"
-}
-```
-
-Le serveur enregistre le message en base puis l'envoie au destinataire lorsqu'il est connecté.
-
-## Authentification
-
-L'application utilise JWT pour sécuriser les endpoints protégés.
-
-Les endpoints suivants restent accessibles sans authentification :
-
-```text
-POST /api/comptes
-POST /api/auth/login
-```
-
-Les autres endpoints nécessitent un JWT valide.
-
-Le mot de passe des utilisateurs est stocké sous forme hachée avec BCrypt.
-
-## Base de données
-
-Le projet utilise une base de données MySQL nommée :
-
-```text
-messagerie
-```
-
-Le mot de passe MySQL ne doit pas être envoyé sur GitHub.
-
-La variable d'environnement suivante est utilisée :
-
-```text
-DB_PASSWORD
-```
-
-Dans `application.properties` :
-
-```properties
-spring.datasource.password=${DB_PASSWORD:}
-```
-
-Chaque développeur doit donc définir sa propre variable d'environnement `DB_PASSWORD`.
-
-## Installation
-
-### Prérequis
-
-Avant de lancer le projet, installer :
-
-* Java 17
-* Maven
-* MySQL
-* Node.js
-* npm
-* Postman
-* IntelliJ IDEA ou un IDE équivalent
-
-### 1. Cloner le projet
+Dans un terminal :
 
 ```bash
-git clone <https://github.com/jennyba-huey/Chat2_Java_ProjetAPI>
-```
-
-Puis entrer dans le projet :
-
-```bash
-cd projet-messagerie
-```
-
-### 2. Lancer le serveur
-
-Ouvrir le dossier :
-
-```text
-serveur/APIProject
-```
-
-avec IntelliJ IDEA.
-
-Configurer la variable d'environnement :
-
-```text
-DB_PASSWORD=<mot_de_passe_mysql>
-```
-
-Puis lancer :
-
-```text
-ApiProjectApplication
-```
-
-Le serveur démarre sur :
-
-```text
-http://localhost:8080
-```
-
-### 3. Lancer le client bureau
-
-Depuis le dossier du client React :
-
-```bash
-npm install
+cd client-bureau
+npm install      # seulement la première fois : télécharge React, Vite, etc.
 npm run dev
 ```
 
-### 4. Lancer le client mobile
+Puis ouvrez **http://localhost:5173**.
 
-Le client mobile peut être lancé avec un serveur local, par exemple avec VS Code Live Server.
+### 3. Le client mobile (téléphone)
 
-L'adresse du serveur API doit être adaptée à l'adresse IP du PC qui héberge le serveur lors des tests sur plusieurs appareils.
-
-## Tests
-
-Une collection Postman `ProjetAPI` est fournie dans le dossier :
-
-```text
-postman/
-```
-
-Elle permet notamment de tester :
-
-* la création d'un compte ;
-* la connexion ;
-* l'authentification JWT ;
-* la récupération des utilisateurs ;
-* la récupération de l'historique ;
-* les erreurs HTTP ;
-* la communication WebSocket.
-
-## Communication entre deux appareils
-
-Pour tester la messagerie entre un téléphone et un ordinateur :
-
-1. Les deux appareils doivent être connectés au même réseau Wi-Fi.
-2. Le serveur Spring Boot doit être lancé sur le PC.
-3. Récupérer l'adresse IPv4 du PC avec :
+Dans un autre terminal :
 
 ```bash
-ipconfig
+cd client-mobile
+python3 -m http.server 5500
 ```
 
-4. Utiliser cette adresse IP dans les clients.
-5. Vérifier que le port `8080` est autorisé par le pare-feu Windows.
-6. Tester l'envoi d'un message entre les deux appareils.
+Puis ouvrez **http://localhost:5500** (ou utilisez **Open with Live Server** dans VS Code, en ouvrant
+uniquement le dossier `client-mobile`).
 
-Exemple :
+## Faire la démo sur deux vrais appareils
 
-```text
-http://192.168.1.20:8080
-```
+1. Branchez l'ordinateur qui fait tourner le serveur et le téléphone sur **le même Wi-Fi**.
+2. Trouvez l'adresse IP de l'ordinateur :
+   - Mac : `ipconfig getifaddr en0`
+   - Windows : `ipconfig`, ligne **Adresse IPv4** de la carte Wi-Fi
+3. Sur le téléphone, ouvrez `http://<adresse-IP>:5500` (par exemple `http://192.168.1.103:5500`).
+4. Sur l'ordinateur, ouvrez le client bureau, connectez-vous avec un autre compte, et écrivez-vous !
 
-et :
+**Pas besoin de modifier le code pour changer d'IP** : les deux clients prennent automatiquement
+l'adresse de la page pour trouver le serveur. Si jamais la page du client mobile est servie par une
+autre machine que le serveur, il suffit de modifier la constante `SERVEUR` tout en haut de `client-mobile/app.js`.
 
-```text
-ws://192.168.1.20:8080/ws/messages?token=<jeton>
-```
+**Si le téléphone n'arrive pas à se connecter :**
+- le pare-feu de l'ordinateur bloque peut-être les connexions : autorisez Java et Python
+  (sur Mac : **Réglages Système → Réseau → Coupe-feu**) ;
+- certains Wi-Fi (écoles, Wi-Fi « invité ») empêchent les appareils de se voir entre eux :
+  dans ce cas, activez le **partage de connexion** du téléphone et connectez l'ordinateur dessus.
 
-## Fonctionnalités prévues
+## Comptes de test
 
-### Fonctionnalités obligatoires
+La base de données est **locale** : chaque ordinateur a la sienne, vide au départ.
+Créez d'abord deux comptes, avec le bouton **Créer un compte** d'un des clients, ou avec Postman.
+Par exemple :
 
-* Création de compte
-* Connexion avec JWT
-* Sécurisation des endpoints
-* Messagerie en temps réel
-* Enregistrement des messages dans MySQL
-* Historique des conversations
-* Statut connecté / hors ligne
-* Client bureau
-* Client mobile
+| Nom d'utilisateur | Mot de passe |
+|---|---|
+| Jenny | motdepasse07 |
+| Ashley | secret123 |
 
-### Fonctionnalités supplémentaires
+Règles : au moins 3 caractères pour le nom, au moins 6 pour le mot de passe.
 
-* Notification hors ligne simulée
-* Indicateur « en train d'écrire »
-* Documentation Swagger
-* Limitation du nombre de messages envoyés
+## Tester l'API sans les clients
 
-## Organisation Git
+- **Swagger** : avec le serveur lancé, ouvrez **http://localhost:8080/swagger-ui.html**.
+  C'est une page qui liste toutes les adresses de l'API et permet de les essayer directement.
+  Pour les adresses protégées (cadenas) : lancez d'abord **POST /api/auth/login**, copiez le `token`
+  reçu, cliquez sur **Authorize** et collez-le.
+- **Postman** : importez `postman/ProjetAPI.postman_collection.json`. Lancez toujours une requête de
+  **login** en premier : son script enregistre le jeton tout seul pour les autres requêtes.
+- **Tests automatiques** : dans IntelliJ, lancez `RateLimitServiceTest` (dans `serveur/src/test`).
 
-Chaque membre travaille sur sa propre branche.
+## L'API en résumé
 
-Branches prévues :
+| Adresse | Jeton ? | À quoi ça sert |
+|---|---|---|
+| `POST /api/comptes` | Non | Créer un compte |
+| `POST /api/auth/login` | Non | Se connecter et recevoir un jeton |
+| `GET /api/utilisateurs` | Oui | Liste des utilisateurs, avec qui est en ligne |
+| `GET /api/messages/{id}` | Oui | Historique de la conversation avec l'utilisateur `{id}` |
+| `ws://…:8080/ws/messages?token=…` | Oui | Canal temps réel (envoi et réception des messages) |
 
-```text
-main
-djeneba
-binome
-```
+Le jeton s'envoie dans l'en-tête `Authorization: Bearer <jeton>`.
+Sans jeton valide, le serveur répond `401`.
 
-Avant de commencer une session :
+## La sécurité, en bref
 
-```bash
-git pull
-```
+- Les mots de passe ne sont **jamais stockés en clair** : ils sont hachés avec BCrypt.
+- Au login, le serveur donne un **jeton JWT** (valable 24 h), une sorte de badge signé.
+  Le client le montre à chaque requête. Si quelqu'un modifie le jeton, la signature ne correspond
+  plus et le serveur le refuse.
+- Le jeton est aussi vérifié à l'ouverture du WebSocket.
+- Le serveur décide lui-même **qui envoie** un message (à partir du jeton) et **à quelle heure** :
+  impossible de se faire passer pour quelqu'un d'autre.
+- **Anti-spam** : un utilisateur ne peut pas envoyer plus de 10 messages en 10 secondes.
 
-Après avoir terminé une fonctionnalité :
+Limites assumées pour une démo en local : la clé de signature est dans la configuration,
+le jeton est visible dans l'adresse du WebSocket, et on utilise `ws://` au lieu de `wss://` (non chiffré).
 
-```bash
-git add .
-git commit -m "Description de la modification"
-git push
-```
+## Problèmes fréquents
 
-Les modifications fonctionnelles sont ensuite fusionnées dans `main`.
+| Problème | Solution |
+|---|---|
+| `Access denied for user 'root'` au lancement | Le mot de passe dans `DB_PASSWORD` est faux |
+| `Communications link failure` | MySQL n'est pas démarré |
+| `Port 8080 already in use` | Un autre serveur tourne déjà : arrêtez-le |
+| Le client affiche « Serveur injoignable » | Le serveur n'est pas lancé, ou mauvaise adresse IP |
+| Live Server n'apparaît pas dans VS Code | VS Code est en « Restricted Mode » : cliquez dessus puis **Trust** |
+| La page du client mobile se recharge toute seule | Ouvrez uniquement le dossier `client-mobile` dans VS Code, pas tout le projet |
 
-## Autrices 👩🏾‍💻 👩🏾‍💻
+## Qui a fait quoi
 
-Projet réalisé dans le cadre du Master Ingénierie Informatique à l'EFREI Paris.
-
-* Djeneba Ba
-* Ashley Makuiza
-
-
-Version : septembre 2026
+| | Djeneba | Ashley |
+|---|---|---|
+| Serveur | Entités, API REST de base, canal WebSocket, présence | Sécurité JWT, CORS, vérification du jeton du WebSocket, anti-spam |
+| Clients | Client bureau (React) | Client mobile (HTML/CSS/JS) |
+| Bonus | Indicateur « en train d'écrire » | Swagger, limitation de débit (anti-spam), tests automatiques |
