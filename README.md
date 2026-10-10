@@ -11,7 +11,8 @@ Deux personnes, sur deux appareils différents (par exemple un téléphone et un
 - créer un compte et se connecter ;
 - voir qui est en ligne ;
 - s'envoyer des messages qui arrivent **instantanément**, sans recharger la page ;
-- retrouver tout l'historique de leur conversation, même après s'être déconnectées.
+- retrouver tout l'historique de leur conversation, même après s'être déconnectées ;
+- recevoir les messages envoyés pendant qu'elles étaient déconnectées.
 
 Tous les messages passent par un **serveur central** et sont enregistrés dans une **base de données**.
 Les deux appareils ne se parlent jamais directement : c'est le serveur qui fait le facteur.
@@ -170,6 +171,13 @@ Règles : au moins 3 caractères pour le nom, au moins 6 pour le mot de passe.
 Le jeton s'envoie dans l'en-tête `Authorization: Bearer <jeton>`.
 Sans jeton valide, le serveur répond `401`.
 
+## Si le destinataire est hors ligne
+
+- Le message est **enregistré en base avant d'être envoyé** : rien n'est perdu.
+- Le serveur simule une notification (webhook) : une ligne `[WEBHOOK] Notification envoyee…`
+  apparaît dans la console du serveur.
+- À sa prochaine connexion, le destinataire retrouve le message dans son historique.
+
 ## La sécurité, en bref
 
 - Les mots de passe ne sont **jamais stockés en clair** : ils sont hachés avec BCrypt.
@@ -180,6 +188,8 @@ Sans jeton valide, le serveur répond `401`.
 - Le serveur décide lui-même **qui envoie** un message (à partir du jeton) et **à quelle heure** :
   impossible de se faire passer pour quelqu'un d'autre.
 - **Anti-spam** : un utilisateur ne peut pas envoyer plus de 10 messages en 10 secondes.
+  Les messages refusés ne sont pas enregistrés.
+- **Taille des messages** : un message vide ou de plus de 2000 caractères est refusé par le serveur.
 
 Limites assumées pour une démo en local : la clé de signature est dans la configuration,
 le jeton est visible dans l'adresse du WebSocket, et on utilise `ws://` au lieu de `wss://` (non chiffré).
@@ -199,6 +209,6 @@ le jeton est visible dans l'adresse du WebSocket, et on utilise `ws://` au lieu 
 
 | | Djeneba | Ashley |
 |---|---|---|
-| Serveur | Entités, API REST de base, canal WebSocket, présence | Sécurité JWT, CORS, vérification du jeton du WebSocket, anti-spam |
+| Serveur | Entités, API REST de base, canal WebSocket, présence, branchement de l'anti-spam | Sécurité JWT, CORS, vérification du jeton du WebSocket, service anti-spam |
 | Clients | Client bureau (React) | Client mobile (HTML/CSS/JS) |
-| Bonus | Indicateur « en train d'écrire » | Swagger, limitation de débit (anti-spam), tests automatiques |
+| Bonus | Indicateur « en train d'écrire », notification hors ligne (webhook simulé) | Swagger, limitation de débit (anti-spam), tests automatiques |
