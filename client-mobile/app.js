@@ -1,36 +1,27 @@
 "use strict";
 
-/* =========================================================
-   CONFIGURATION
-   Meme logique que le client bureau : on reprend l'adresse de la page.
-   En local c'est "localhost" ; le jour de la demo, si la page est ouverte
-   via http://192.168.x.x:5500, le client ira chercher le serveur sur 192.168.x.x.
-   Si la page est servie par une autre machine que le serveur, remplacer par
-   l'IP du PC serveur, par exemple : const SERVEUR = "192.168.1.20:8080";
-   ========================================================= */
 const SERVEUR = `${window.location.hostname || "localhost"}:8080`;
 
 const URL_API = `http://${SERVEUR}`;
 const URL_WS = `ws://${SERVEUR}/ws/messages`;
 
 const CLE_SESSION = "messagerie.mobile.session";
-const DELAI_MAX_RECONNEXION_MS = 10000;   // attente maximum entre deux tentatives
-const DELAI_SIGNAL_ECRITURE_MS = 2000;    // au plus un signal "en train d'ecrire" toutes les 2 s
-const DUREE_INDICATEUR_ECRITURE_MS = 3000; // l'indicateur s'efface apres 3 s sans nouvelle saisie
+const DELAI_MAX_RECONNEXION_MS = 10000;
+const DELAI_SIGNAL_ECRITURE_MS = 2000;
+const DUREE_INDICATEUR_ECRITURE_MS = 4000;
 
-/* Etat de l'application */
 const etat = {
-  session: null,              // { token, id, username }
+  session: null,
   modeInscription: false,
-  utilisateurs: [],           // [{ id, username, connecte, nonLus }]
-  contactId: null,            // id de la conversation ouverte
-  messages: [],               // messages de la conversation ouverte, tries par id
-  ecritureDe: null,           // id de l'utilisateur en train d'ecrire
+  utilisateurs: [],
+  contactId: null,
+  messages: [],
+  ecritureDe: null,
   minuteurEcriture: null,
   dernierSignalEcriture: 0,
   socket: null,
   canalOuvert: false,
-  canalActif: false,          // false apres deconnexion : plus de reconnexion
+  canalActif: false,
   tentative: 0,
   minuteurReconnexion: null,
   minuteurToast: null,
@@ -38,28 +29,34 @@ const etat = {
 
 const $ = (id) => document.getElementById(id);
 const son = new Audio("notification.mp3");
+son.preload = "auto";
 
-
-/* =========================================================
-   SESSION (sessionStorage : propre a l'onglet, comme le client bureau)
-   ========================================================= */
+function deverrouillerSon() {
+  son.muted = true;
+  son.play()
+      .then(() => {
+        son.pause();
+        son.currentTime = 0;
+        son.muted = false;
+      })
+      .catch(() => {});
+  document.removeEventListener("touchend", deverrouillerSon);
+  document.removeEventListener("click", deverrouillerSon);
+}
+document.addEventListener("touchend", deverrouillerSon);
+document.addEventListener("click", deverrouillerSon);
 
 function lireSession() {
   try { return JSON.parse(sessionStorage.getItem(CLE_SESSION)); } catch { return null; }
 }
 
 function ecrireSession(session) {
-  try { sessionStorage.setItem(CLE_SESSION, JSON.stringify(session)); } catch { /* ignore */ }
+  try { sessionStorage.setItem(CLE_SESSION, JSON.stringify(session)); } catch {}
 }
 
 function effacerSession() {
-  try { sessionStorage.removeItem(CLE_SESSION); } catch { /* ignore */ }
+  try { sessionStorage.removeItem(CLE_SESSION); } catch {}
 }
-
-
-/* =========================================================
-   OUTILS D'AFFICHAGE
-   ========================================================= */
 
 function afficherEcran(nom) {
   ["connexion", "liste", "conversation"].forEach((e) => {
@@ -84,10 +81,9 @@ function afficherToast(texte) {
 
 function jouerSon() {
   son.currentTime = 0;
-  son.play().catch(() => {});
+  son.play().catch((e) => console.warn("Son bloqué par le navigateur :", e.name));
 }
 
-/** "14:05" si le message date d'aujourd'hui, "27/09 14:05" sinon. */
 function formaterHeure(dateIso) {
   const d = new Date(dateIso);
   if (Number.isNaN(d.getTime())) return "";
@@ -100,15 +96,6 @@ function initiale(username) {
   return (username || "?").charAt(0).toUpperCase();
 }
 
-
-/* =========================================================
-   APPELS A L'API REST
-   ========================================================= */
-
-/**
- * Appel REST generique : ajoute le jeton, lit le JSON et transforme les
- * erreurs du serveur ({status, erreur, message, date}) en exception.
- */
 async function appeler(chemin, { methode = "GET", corps } = {}) {
   const entetes = { "Content-Type": "application/json" };
   if (etat.session?.token) entetes.Authorization = `Bearer ${etat.session.token}`;
@@ -134,7 +121,6 @@ async function appeler(chemin, { methode = "GET", corps } = {}) {
   return donnees;
 }
 
-/** Jeton expire ou invalide sur un appel protege : retour a l'ecran de connexion. */
 function estSessionExpiree(erreur) {
   if (erreur.status === 401 && etat.session) {
     deconnecter("Ta session a expiré. Reconnecte-toi.");
@@ -143,18 +129,13 @@ function estSessionExpiree(erreur) {
   return false;
 }
 
-
-/* =========================================================
-   ECRAN 1 : CONNEXION / CREATION DE COMPTE
-   ========================================================= */
-
 function majModeConnexion() {
   const inscription = etat.modeInscription;
   $("titre-connexion").textContent = inscription ? "Créer un compte" : "Connexion";
   $("btn-valider").textContent = inscription ? "S'inscrire" : "Se connecter";
   $("btn-changer-mode").textContent = inscription
-    ? "Déjà un compte ? Se connecter"
-    : "Pas de compte ? Créer un compte";
+      ? "Déjà un compte ? Se connecter"
+      : "Pas de compte ? Créer un compte";
   $("champ-mdp").autocomplete = inscription ? "new-password" : "current-password";
 }
 
@@ -169,7 +150,6 @@ $("form-connexion").addEventListener("submit", async (evenement) => {
   const username = $("champ-username").value.trim();
   const motDePasse = $("champ-mdp").value;
 
-  // Memes regles de saisie que le client bureau
   if (!username || !motDePasse) {
     afficherErreur("erreur-connexion", "Saisis un nom d'utilisateur et un mot de passe.");
     return;
@@ -235,11 +215,6 @@ function deconnecter(message) {
 
 $("btn-deconnexion").addEventListener("click", () => deconnecter());
 
-
-/* =========================================================
-   ECRAN 2 : LISTE DES UTILISATEURS
-   ========================================================= */
-
 function trouverUtilisateur(id) {
   return etat.utilisateurs.find((u) => u.id === id);
 }
@@ -250,8 +225,8 @@ async function chargerUtilisateurs() {
     if (!etat.session) return;
     const anciensNonLus = new Map(etat.utilisateurs.map((u) => [u.id, u.nonLus]));
     etat.utilisateurs = liste
-      .filter((u) => u.id !== etat.session.id)
-      .map((u) => ({ ...u, nonLus: anciensNonLus.get(u.id) || 0 }));
+        .filter((u) => u.id !== etat.session.id)
+        .map((u) => ({ ...u, nonLus: anciensNonLus.get(u.id) || 0 }));
     afficherErreur("erreur-liste", null);
     afficherListe();
     if (etat.contactId != null) majEnteteConversation();
@@ -267,9 +242,8 @@ function afficherListe() {
   ul.replaceChildren();
   $("liste-vide").hidden = etat.utilisateurs.length > 0;
 
-  // Les utilisateurs en ligne d'abord, puis par ordre alphabetique
   const tries = [...etat.utilisateurs].sort(
-    (a, b) => (b.connecte - a.connecte) || a.username.localeCompare(b.username, "fr")
+      (a, b) => (b.connecte - a.connecte) || a.username.localeCompare(b.username, "fr")
   );
 
   for (const u of tries) {
@@ -294,8 +268,8 @@ function afficherListe() {
     const statut = document.createElement("span");
     statut.className = "user-statut";
     statut.textContent = etat.ecritureDe === u.id
-      ? "est en train d'écrire..."
-      : (u.connecte ? "en ligne" : "hors ligne");
+        ? "est en train d'écrire..."
+        : (u.connecte ? "en ligne" : "hors ligne");
     texte.append(nom, statut);
 
     bouton.append(avatar, texte);
@@ -314,11 +288,6 @@ function afficherListe() {
   }
 }
 
-
-/* =========================================================
-   ECRAN 3 : CONVERSATION
-   ========================================================= */
-
 function ouvrirConversation(id) {
   const u = trouverUtilisateur(id);
   if (!u) return;
@@ -326,7 +295,6 @@ function ouvrirConversation(id) {
   etat.contactId = id;
   etat.messages = [];
   u.nonLus = 0;
-  // On repart de zero : l'indicateur d'une autre conversation ne doit pas s'afficher ici
   etat.ecritureDe = null;
   clearTimeout(etat.minuteurEcriture);
 
@@ -346,13 +314,12 @@ $("btn-retour").addEventListener("click", () => {
   afficherListe();
 });
 
-/** Historique REST de la conversation ouverte, fusionne avec les messages deja recus. */
 async function chargerHistorique() {
   const id = etat.contactId;
   if (id == null) return;
   try {
     const liste = await appeler(`/api/messages/${id}`);
-    if (etat.contactId !== id) return; // conversation quittee entre-temps
+    if (etat.contactId !== id) return;
     fusionnerMessages(liste);
   } catch (erreur) {
     if (!estSessionExpiree(erreur) && etat.contactId === id) {
@@ -361,11 +328,10 @@ async function chargerHistorique() {
   }
 }
 
-/** Ajoute des messages sans doublon (comparaison par id), tries par id. */
 function fusionnerMessages(ajouts) {
   const ids = new Set(etat.messages.map((m) => m.id));
   etat.messages = [...etat.messages, ...ajouts.filter((m) => !ids.has(m.id))]
-    .sort((a, b) => a.id - b.id);
+      .sort((a, b) => a.id - b.id);
   afficherMessages();
 }
 
@@ -387,7 +353,7 @@ function afficherMessages() {
     bulle.className = mien ? "message mien" : "message autre";
 
     const texte = document.createElement("p");
-    texte.textContent = m.contenu; // textContent : aucun HTML injecte depuis un message
+    texte.textContent = m.contenu;
 
     const heure = document.createElement("span");
     heure.className = "message-heure";
@@ -399,7 +365,6 @@ function afficherMessages() {
   zone.scrollTop = zone.scrollHeight;
 }
 
-/** Nom, avatar et statut du contact ; le statut devient "est en train d'ecrire..." quand il ecrit. */
 function majEnteteConversation() {
   const u = trouverUtilisateur(etat.contactId);
   if (!u) return;
@@ -423,7 +388,6 @@ function majSaisie() {
   $("btn-envoyer").disabled = !etat.canalOuvert || !champ.value.trim();
 }
 
-/* Signale la saisie au serveur, au plus une fois toutes les 2 secondes */
 $("champ-message").addEventListener("input", (evenement) => {
   majSaisie();
   const maintenant = Date.now();
@@ -433,10 +397,6 @@ $("champ-message").addEventListener("input", (evenement) => {
   }
 });
 
-/*
- * Envoie le message au serveur : il revient par le canal avec son id et sa date
- * officielle, et c'est ce retour qui ajoute la bulle.
- */
 $("form-message").addEventListener("submit", (evenement) => {
   evenement.preventDefault();
   const champ = $("champ-message");
@@ -453,13 +413,6 @@ $("form-message").addEventListener("submit", (evenement) => {
   majSaisie();
   champ.focus();
 });
-
-
-/* =========================================================
-   CANAL TEMPS REEL (WEBSOCKET)
-   Ouvert avec le jeton JWT, rouvert automatiquement s'il se ferme
-   (serveur redemarre, reseau coupe), avec une attente de plus en plus longue.
-   ========================================================= */
 
 function envoyer(objet) {
   const socket = etat.socket;
@@ -486,14 +439,12 @@ function connecterCanal() {
   socket.addEventListener("open", () => {
     etat.tentative = 0;
     majCanal(true);
-    // Le canal vient de s'ouvrir : on recharge la liste pour avoir les statuts a jour,
-    // et l'historique, pour recuperer les messages recus pendant une coupure
     chargerUtilisateurs();
     if (etat.contactId != null) chargerHistorique();
   });
 
   socket.addEventListener("close", () => {
-    if (etat.socket !== socket) return; // ancien canal deja remplace
+    if (etat.socket !== socket) return;
     etat.socket = null;
     majCanal(false);
     if (!etat.canalActif) return;
@@ -504,7 +455,7 @@ function connecterCanal() {
 
   socket.addEventListener("message", (evenement) => {
     let donnees;
-    try { donnees = JSON.parse(evenement.data); } catch { return; } // message non JSON : ignore
+    try { donnees = JSON.parse(evenement.data); } catch { return; }
     traiterEvenement(donnees);
   });
 }
@@ -527,7 +478,6 @@ function majCanal(ouvert) {
   majSaisie();
 }
 
-/** Le client lit toujours le champ "type" en premier (contrat, section 3.2). */
 function traiterEvenement(evenement) {
   switch (evenement.type) {
     case "presence":
@@ -553,7 +503,7 @@ function recevoirPresence(p) {
   if (p.utilisateurId === etat.session?.id) return;
   const u = trouverUtilisateur(p.utilisateurId);
   if (!u) {
-    chargerUtilisateurs(); // utilisateur cree apres le chargement de la liste
+    chargerUtilisateurs();
     return;
   }
   u.connecte = p.connecte;
@@ -567,7 +517,6 @@ function recevoirMessage(m) {
   const recu = m.expediteurId !== moi;
 
   if (recu) {
-    // Le message est arrive : l'autre a fini d'ecrire, et on previent par un son
     if (etat.ecritureDe === m.expediteurId) {
       etat.ecritureDe = null;
       clearTimeout(etat.minuteurEcriture);
@@ -575,14 +524,12 @@ function recevoirMessage(m) {
     jouerSon();
   }
 
-  // Conversation ouverte avec cette personne : on ajoute la bulle
   if (autreId === etat.contactId) {
     fusionnerMessages([m]);
     majEnteteConversation();
     return;
   }
 
-  // Message recu dans une autre conversation : compteur de non lus + notification
   if (recu) {
     const u = trouverUtilisateur(autreId);
     if (u) {
@@ -601,7 +548,6 @@ function recevoirMessage(m) {
   }
 }
 
-/* "est en train d'ecrire" : s'efface tout seul apres 3 secondes sans nouvelle saisie */
 function recevoirEcriture(t) {
   etat.ecritureDe = t.expediteurId;
   clearTimeout(etat.minuteurEcriture);
@@ -614,11 +560,6 @@ function recevoirEcriture(t) {
   afficherListe();
 }
 
-
-/* =========================================================
-   DEMARRAGE
-   Si une session existe deja dans l'onglet, on la reprend.
-   ========================================================= */
 majModeConnexion();
 const sessionExistante = lireSession();
 if (sessionExistante?.token) {

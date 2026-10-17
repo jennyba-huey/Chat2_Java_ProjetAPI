@@ -12,13 +12,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.List;
 
-/**
- * Lit l'en-tete "Authorization: Bearer <jeton>" a chaque requete REST.
- * Si le jeton est valide, l'utilisateur est considere comme authentifie :
- * son id devient le "principal", que les controleurs recuperent avec @AuthenticationPrincipal.
- * Si le jeton est absent ou invalide, on ne fait rien : SecurityConfig renverra 401
- * pour les endpoints proteges.
- */
+
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
 

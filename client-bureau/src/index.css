@@ -309,3 +309,9 @@ button {
     font-style: italic;
     color: var(--primary);
 }
+.user-ecrit {
+    margin-left: auto;
+    font-size: 0.8rem;
+    font-style: italic;
+    opacity: 0.75;
+}

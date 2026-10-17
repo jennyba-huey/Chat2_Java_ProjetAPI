@@ -23,7 +23,7 @@ public class MessageService {
         this.utilisateurRepository = utilisateurRepository;
     }
 
-    /** Historique complet entre l'utilisateur courant et un autre utilisateur (REST). */
+
     @Transactional(readOnly = true)
     public List<MessageResponse> historique(Long moiId, Long autreId) {
         verifierExiste(moiId);
@@ -33,11 +33,7 @@ public class MessageService {
                 .toList();
     }
 
-    /**
-     * Enregistre un message recu par WebSocket (etape 4).
-     * L'expediteur vient du jeton JWT (jamais du client),
-     * la date est posee par le serveur grace a @PrePersist dans l'entite Message.
-     */
+
     @Transactional
     public MessageResponse enregistrer(Long expediteurId, Long destinataireId, String contenu) {
         if (contenu == null || contenu.isBlank()) {
