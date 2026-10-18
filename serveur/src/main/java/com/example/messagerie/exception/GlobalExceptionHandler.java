@@ -13,8 +13,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.stream.Collectors;
 
 /**
- * Traduit les exceptions Java en reponses HTTP JSON propres,
- * avec le bon code de statut.
+ * Traduit les exceptions Java en reponses HTTP JSON
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {

@@ -15,11 +15,9 @@ import java.util.Map;
  * - Jeton absent ou invalide : la connexion est refusee (401).
  * - Jeton valide : l'id de l'utilisateur est range dans les attributs de la session WebSocket,
  *   sous la cle ATTRIBUT_UTILISATEUR_ID.
- *
- * Utilisation cote WebSocket (Djeneba) :
  *   - dans WebSocketConfig : .addInterceptors(jwtHandshakeInterceptor)
  *   - dans le handler : Long id = (Long) session.getAttributes()
- *                                   .get(JwtHandshakeInterceptor.ATTRIBUT_UTILISATEUR_ID);
+ *                                   .get(JwtHandshakeInterceptor.ATTRIBUT_UTILISATEUR_ID)
  */
 @Component
 public class JwtHandshakeInterceptor implements HandshakeInterceptor {

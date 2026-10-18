@@ -23,8 +23,6 @@ public class MessageController {
 
     /**
      * GET /api/messages/{utilisateurId} : historique entre l'utilisateur connecte et cet utilisateur.
-     * L'utilisateur connecte ("moi") est lu dans le jeton JWT par JwtAuthFilter :
-     * il ne peut donc pas lire les conversations des autres.
      */
     @Operation(
             summary = "Historique d'une conversation",

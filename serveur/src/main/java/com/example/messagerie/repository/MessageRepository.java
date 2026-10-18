@@ -9,7 +9,7 @@ import java.util.List;
 
 public interface MessageRepository extends JpaRepository<Message, Long> {
 
-    /** Tous les messages entre A et B, dans les deux sens, du plus ancien au plus recent. */
+    /** Tous les messages entre 2 utilisateurs a et b, dans les deux sens, du plus ancien au plus recent. */
     @Query("""
            SELECT m FROM Message m
            WHERE (m.expediteur.id = :a AND m.destinataire.id = :b)

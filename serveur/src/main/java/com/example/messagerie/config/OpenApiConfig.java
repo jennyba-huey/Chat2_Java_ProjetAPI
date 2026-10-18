@@ -10,9 +10,6 @@ import org.springframework.context.annotation.Configuration;
 /**
  * Documentation Swagger / OpenAPI de l'API REST.
  * Page : http://localhost:8080/swagger-ui.html
- * Le bouton "Authorize" permet de coller le jeton JWT recu au login :
- * Swagger l'envoie ensuite dans l'en-tete Authorization: Bearer <jeton>.
- * Le canal WebSocket (/ws/messages) n'apparait pas ici : Swagger ne documente que le REST.
  */
 @Configuration
 @OpenAPIDefinition(

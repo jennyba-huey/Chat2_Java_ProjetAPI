@@ -13,8 +13,8 @@ import java.util.Date;
 
 /**
  * Fabrique et verifie les jetons JWT.
- * Utilise par le login (AuthController), par le filtre des requetes REST (JwtAuthFilter)
- * et par la verification a l'ouverture du WebSocket (JwtHandshakeInterceptor).
+ * Utile pour le login (AuthController), le filtre des requetes REST (JwtAuthFilter)
+ * et  la verification a l'ouverture du WebSocket (JwtHandshakeInterceptor).
  */
 @Service
 public class JwtService {

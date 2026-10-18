@@ -13,8 +13,6 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Carnet d'adresses des connexions WebSocket ouvertes.
  * Pour chaque utilisateur, on garde la liste de ses connexions
- * (il peut etre connecte sur son telephone ET sur son PC en meme temps).
- * Tient aussi a jour PresenceService, utilise par GET /api/utilisateurs.
  */
 @Component
 public class SessionRegistry {
@@ -34,7 +32,6 @@ public class SessionRegistry {
 
     /**
      * Enregistre une nouvelle connexion.
-     * @return true si c'est la premiere connexion de cet utilisateur (il vient de passer "en ligne")
      */
     public boolean ajouter(Long utilisateurId, WebSocketSession session) {
         // Le "decorateur" rend l'envoi sur une connexion sur, meme si deux messages partent en meme temps
@@ -52,7 +49,6 @@ public class SessionRegistry {
 
     /**
      * Retire une connexion fermee.
-     * @return true si c'etait sa derniere connexion (il vient de passer "hors ligne")
      */
     public boolean retirer(Long utilisateurId, WebSocketSession session) {
         Map<String, WebSocketSession> sessionsUtilisateur = sessions.get(utilisateurId);

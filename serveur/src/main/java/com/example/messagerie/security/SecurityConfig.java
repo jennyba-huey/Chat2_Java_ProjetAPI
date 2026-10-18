@@ -27,12 +27,11 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 /**
- * Configuration de securite (etape 3) :
- * - seuls POST /api/comptes et POST /api/auth/login sont publics ;
- * - la documentation Swagger (/swagger-ui.html, /v3/api-docs) est publique (etape 6) ;
- * - tout le reste exige un jeton JWT valide, sinon 401 au format JSON du contrat ;
- * - /ws/** est laisse passer ici : le jeton y est verifie par JwtHandshakeInterceptor ;
- * - CORS autorise les pages des deux clients (en local et sur le reseau Wi-Fi de la demo).
+ * Configuration de securite :
+ * - seuls 2 POST /api/comptes et POST /api/auth/login sont publics ;
+ * - la documentation Swagger (/swagger-ui.html, /v3/api-docs) est publique ;
+ * - tout le reste demande un jeton JWT valide, sinon 401 au format JSON ;
+ * - /ws/** : le jeton y est verifie par JwtHandshakeInterceptor.
  */
 @Configuration
 public class SecurityConfig {
@@ -90,8 +89,6 @@ public class SecurityConfig {
 
     /**
      * CORS : autorise les pages web des clients a appeler l'API.
-     * Origines acceptees : localhost / 127.0.0.1 (tests sur un seul PC)
-     * et les adresses de reseau local (Wi-Fi ou partage de connexion le jour de la demo), sur tous les ports.
      */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {

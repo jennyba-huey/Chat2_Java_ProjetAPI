@@ -8,7 +8,7 @@ import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
 
 /**
  * Declare l'adresse du canal temps reel : ws://<serveur>:8080/ws/messages?token=<jeton>
- * Le jeton est verifie par l'intercepteur d'Ashley avant l'ouverture de la connexion.
+ * Le jeton est verifie par l'intercepteur avant l'ouverture de la connexion.
  */
 @Configuration
 @EnableWebSocket

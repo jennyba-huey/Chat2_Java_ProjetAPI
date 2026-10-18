@@ -7,9 +7,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Sait qui est connecte en ce moment.
- * A l'etape 2 personne n'est connecte ; a l'etape 4, le handler WebSocket
- * appellera marquerConnecte / marquerDeconnecte a chaque connexion.
- * Ensemble thread-safe, car plusieurs connexions arrivent en parallele.
  */
 @Service
 public class PresenceService {

@@ -10,14 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Limitation de debit (anti-spam) sur l'envoi de messages.
- * Un utilisateur ne peut pas envoyer plus de maxMessages messages
- * sur une fenetre glissante de fenetreMs millisecondes (par defaut : 10 messages en 10 secondes).
- *
- * Utilisation cote WebSocket (ChatWebSocketHandler), avant d'enregistrer un message :
- *   if (!rateLimitService.autoriser(expediteurId)) {
- *       // renvoyer {"type":"erreur","message":"Trop de messages, patientez"}
- *       return;
- *   }
+ * Un utilisateur ne peut pas envoyer plus de 10 messages en 10 secondes.
  */
 @Service
 public class RateLimitService {

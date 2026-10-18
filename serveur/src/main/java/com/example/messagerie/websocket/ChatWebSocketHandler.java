@@ -23,10 +23,6 @@ import java.util.Map;
 /**
  * Canal temps reel ws://.../ws/messages.
  * Le jeton est deja verifie par JwtHandshakeInterceptor, on connait donc toujours l'utilisateur.
- * Types geres : "message" (enregistre puis transmis) et "typing" (transmis sans enregistrement).
- * Le serveur envoie aussi "presence" et "erreur".
- * Les messages sont limites par RateLimitService (anti-spam), et un destinataire hors ligne
- * est prevenu par NotificationService (webhook simule).
  */
 @Component
 public class ChatWebSocketHandler extends TextWebSocketHandler {
