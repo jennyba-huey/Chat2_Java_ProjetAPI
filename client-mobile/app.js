@@ -386,6 +386,7 @@ function majSaisie() {
   champ.disabled = !etat.canalOuvert;
   champ.placeholder = etat.canalOuvert ? "Écris un message..." : "Connexion au canal en cours...";
   $("btn-envoyer").disabled = !etat.canalOuvert || !champ.value.trim();
+  $("btn-emoji").disabled = !etat.canalOuvert;
 }
 
 $("champ-message").addEventListener("input", (evenement) => {
