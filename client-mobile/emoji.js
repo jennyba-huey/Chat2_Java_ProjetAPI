@@ -19,22 +19,37 @@ const champ = document.getElementById("champ-message");
 const bouton = document.getElementById("btn-emoji");
 const panneau = document.getElementById("panneau-emoji");
 
-const selecteur = new Picker({
-  locale: "fr",
-  i18n: fr,
-  dataSource: "lib/emoji-picker-element/data-fr.json",
-});
-selecteur.classList.add("selecteur-emoji");
-panneau.appendChild(selecteur);
+// Le selecteur est cree a la premiere ouverture, une fois le panneau visible :
+// sur iPhone (Safari), un selecteur cree dans un panneau cache restait vide.
+let selecteur = null;
+
+function creerSelecteur() {
+  selecteur = new Picker({
+    locale: "fr",
+    i18n: fr,
+    dataSource: "lib/emoji-picker-element/data-fr.json",
+  });
+  selecteur.classList.add("selecteur-emoji");
+
+  // Safari n'affichait pas les groupes d'emojis "hors ecran" (content-visibility) :
+  // on force leur affichage. Methode de personnalisation prevue par la bibliotheque.
+  const style = document.createElement("style");
+  style.textContent = ".emoji-menu.visibility-auto { content-visibility: visible; }";
+  selecteur.shadowRoot.appendChild(style);
+
+  selecteur.addEventListener("emoji-click", insererEmoji);
+  panneau.appendChild(selecteur);
+}
 
 function afficherPanneau(ouvert) {
   panneau.hidden = !ouvert;
   bouton.setAttribute("aria-expanded", String(ouvert));
+  if (ouvert && !selecteur) creerSelecteur();
 }
 
 bouton.addEventListener("click", () => afficherPanneau(panneau.hidden));
 
-selecteur.addEventListener("emoji-click", (evenement) => {
+function insererEmoji(evenement) {
   const emoji = evenement.detail.unicode;
   if (!emoji || champ.disabled) return;
 
@@ -48,7 +63,7 @@ selecteur.addEventListener("emoji-click", (evenement) => {
   champ.setSelectionRange(position, position);
 
   champ.dispatchEvent(new Event("input", { bubbles: true }));
-});
+}
 
 // Le panneau se ferme a l'envoi, au retour a la liste, ou en touchant ailleurs
 document.getElementById("form-message").addEventListener("submit", () => afficherPanneau(false));
