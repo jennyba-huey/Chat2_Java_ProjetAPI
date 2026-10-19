@@ -24,39 +24,12 @@ export default function App() {
     const [erreurConversation, setErreurConversation] = useState('')
     const [ecritureDe, setEcritureDe] = useState(null)
     const minuteurEcriture = useRef(null)
-    const son = useRef(null)
-
-    useEffect(() => {
-        const audio = new Audio('/notification.mp3')
-        audio.preload = 'auto'
-        son.current = audio
-
-        function deverrouiller() {
-            audio.muted = true
-            audio.play()
-                .then(() => {
-                    audio.pause()
-                    audio.currentTime = 0
-                    audio.muted = false
-                })
-                .catch(() => {})
-            window.removeEventListener('pointerdown', deverrouiller)
-            window.removeEventListener('keydown', deverrouiller)
-        }
-
-        window.addEventListener('pointerdown', deverrouiller)
-        window.addEventListener('keydown', deverrouiller)
-        return () => {
-            window.removeEventListener('pointerdown', deverrouiller)
-            window.removeEventListener('keydown', deverrouiller)
-        }
-    }, [])
 
     function jouerSon() {
-        const audio = son.current
-        if (!audio) return
-        audio.currentTime = 0
-        audio.play().catch((e) => console.warn('Son bloqué par le navigateur :', e.name))
+        const audio = new Audio('/notification.mp3')
+        audio.play()
+            .then(() => console.log('Son joué'))
+            .catch((e) => console.warn('Son bloqué par le navigateur :', e.name))
     }
 
     function deconnecter() {
