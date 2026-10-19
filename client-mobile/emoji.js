@@ -15,6 +15,27 @@
 import Picker from "./lib/emoji-picker-element/picker.js";
 import fr from "./lib/emoji-picker-element/fr.js";
 
+// La bibliotheque calcule une "empreinte" de la liste d'emojis avec crypto.subtle.
+// Or le navigateur ne fournit crypto.subtle que sur une page securisee (https ou localhost).
+// Sur le telephone, la page est ouverte en http://192.168.x.x : crypto.subtle n'existe pas
+// et le selecteur affichait "Impossible de charger les emojis".
+// La bibliotheque precise que cette empreinte n'a pas besoin d'etre securisee :
+// on fournit donc un calcul simple (FNV-1a) quand crypto.subtle est absent.
+if (!globalThis.crypto?.subtle) {
+  const digest = async (_algorithme, donnees) => {
+    const octets = new Uint8Array(donnees);
+    let empreinte = 0x811c9dc5;
+    for (const octet of octets) {
+      empreinte ^= octet;
+      empreinte = Math.imul(empreinte, 0x01000193) >>> 0;
+    }
+    const resultat = new Uint8Array(4);
+    new DataView(resultat.buffer).setUint32(0, empreinte);
+    return resultat.buffer;
+  };
+  Object.defineProperty(globalThis.crypto, "subtle", { value: { digest }, configurable: true });
+}
+
 const champ = document.getElementById("champ-message");
 const bouton = document.getElementById("btn-emoji");
 const panneau = document.getElementById("panneau-emoji");
